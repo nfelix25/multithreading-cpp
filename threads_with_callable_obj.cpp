@@ -19,9 +19,9 @@ class App {
       }
     }
 
-    int get_count() {
+    int getCount() {
       int count = -1;
-      cout << "Local count in app.get_count: " << count << endl;
+      cout << "Local count in app.getCount: " << count << endl;
       // Declaring local count to show how this-> access can be used when shadowing variables. In this case, the local count variable shadows the member variable count, so we need to use this->count to access the member variable.
       return this->count;
     }
@@ -38,7 +38,7 @@ int main() {
   t1.join();
   t2.join();
 
-  int app_count = app.get_count();
+  int app_count = app.getCount();
 
   cout << "Count from app member: " << app_count << endl;
 
