@@ -9,6 +9,7 @@ void work(int &count, timed_mutex &mtx) {
   for (int i = 0; i < 5; i++) {
     // lock_guard<mutex> guard(mtx);
     // Instead of lock_guard, we can use unique_lock which is more flexible and allows us to lock and unlock manually. It also supports deferred locking, timed locking, and recursive locking.
+    // We need defer_lock to be able to manually lock and unlock the mutex, otherwise the unique_lock will automatically acquire the lock when it is created, which is not what we want in this case since we want to try to acquire the lock with a timeout.
     unique_lock<timed_mutex> lock(mtx, defer_lock);
 
     cout << "Thread " << this_thread::get_id() << " is trying to acquire the lock..." << endl;
