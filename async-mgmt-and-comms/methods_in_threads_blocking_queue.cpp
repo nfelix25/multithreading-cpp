@@ -11,9 +11,9 @@ template<typename ElementType>
 class BlockingQueue {
   private:
     const int _MAX_SIZE; // Leading underscore indicates this is a private member variable, and all caps indicates that it is a constant.
-    std::queue<ElementType> queue;
-    std::mutex mtx;
-    std::condition_variable cv;
+    std::queue<ElementType> _queue;
+    std::mutex _mtx;
+    std::condition_variable _cv;
 
   public:
     BlockingQueue(int size) : _MAX_SIZE(size) /* Initializer list allows us to set member vars before constructor */ {
@@ -21,18 +21,18 @@ class BlockingQueue {
     }
 
     void enqueue(ElementType element) {
-      std::unique_lock<std::mutex> lock(mtx);
-      cv.wait(lock, [this](){
-        if (queue.size() >= _MAX_SIZE) {
+      std::unique_lock<std::mutex> lock(_mtx);
+      _cv.wait(lock, [this](){
+        if (_queue.size() >= _MAX_SIZE) {
           cout << "\nQueue is full. Producer is waiting..." << endl << endl;
         }
-        return queue.size() < _MAX_SIZE; // Wait until there is space in the queue
+        return _queue.size() < _MAX_SIZE; // Wait until there is space in the queue
       });
 
       cout << "Enqueuing element: " << element << endl;
-      queue.push(element);
+      _queue.push(element);
       lock.unlock(); // Unlock before notifying to allow the waiting thread to proceed without being blocked by the mutex.
-      cv.notify_one(); // Notify one waiting thread that an element has been enqueued
+      _cv.notify_one(); // Notify one waiting thread that an element has been enqueued
 
       // Simulate async delay for random amount of time
       std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 500));
@@ -41,19 +41,19 @@ class BlockingQueue {
     ElementType dequeue() {
       ElementType ret;
 
-      std::unique_lock<std::mutex> lock(mtx);
-      cv.wait(lock, [this](){
-        if (queue.empty()) {
+      std::unique_lock<std::mutex> lock(_mtx);
+      _cv.wait(lock, [this](){
+        if (_queue.empty()) {
           cout << "\nQueue is empty. Consumer is waiting..." << endl << endl;
         }
-        return !queue.empty(); // Wait until there is an element in the queue
+        return !_queue.empty(); // Wait until there is an element in the queue
       });
 
-      cout << "Dequeuing element: " << queue.front() << endl;
-      ret = queue.front();
-      queue.pop();
+      cout << "Dequeuing element: " << _queue.front() << endl;
+      ret = _queue.front();
+      _queue.pop();
       lock.unlock(); // Unlock before notifying to allow the waiting thread to proceed without being blocked by the mutex.
-      cv.notify_one(); // Notify one waiting thread that an element has been dequeued
+      _cv.notify_one(); // Notify one waiting thread that an element has been dequeued
 
       // Simulate async delay for random amount of time
       std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 1000));
@@ -79,9 +79,10 @@ int main() {
     for (int x : elements) {
       bq.enqueue(x);
     }
-  }, elements /* Does not need to be passed in since declared out and could be & in [], but doign so to keep with what format would eb with C style array */);
+  }, elements /* Does not need to be passed in since declared out and could be & in [], but doign so to keep with what format would be with C style array */);
 
   std::array<int, num_elements> consumed_elements;
+
   std::thread consumer([&bq, &consumed_elements](){
     for (int i = 0; i < consumed_elements.size(); i++) {
       consumed_elements[i] = bq.dequeue();
