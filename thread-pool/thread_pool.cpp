@@ -74,93 +74,42 @@ class BlockingQueue {
 
 int work(int id)
 {
+  int rand_time = 100 + rand() % 5000;
+
   cout_mtx.lock();
-  std::cout << "Worker " << id << " is working..." << std::endl;
+  std::cout << "Worker " << id << " is working for " << rand_time << "ms..." << std::endl;
   cout_mtx.unlock();
 
   // Simulate async work by sleeping for a random amount of time
-  std::this_thread::sleep_for(std::chrono::milliseconds(100 + rand() % 2000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(rand_time));
 
   return id;
 }
 
 int main() {
-  const int NUM_THREADS = 10;
-  BlockingQueue<std::shared_future<int>> futures(4);
+  const int NUM_THREADS = 5;
+  BlockingQueue<std::shared_future<int>> futures(2);
 
   // Run enqueue process in its own thread so that it doesn't block the main thread and allow the futures to run concurrently. This will allow us to see the output for all workers in a non-deterministic order, as they will be running concurrently.
-  std::thread t1([&](){
+  std::thread producer([&](){
     for (int i = 1; i <= NUM_THREADS; i++) {
       std::shared_future<int> f = std::async(std::launch::async, work, i);
       futures.enqueue(f);
     }
   });
 
-  for (int i = 0; i < NUM_THREADS; i++) {
-    std::shared_future<int> f = futures.dequeue();
-    int value = f.get();
+  std::thread consumer([&](){
+      for (int i = 0; i < NUM_THREADS; i++) {
+        std::shared_future<int> f = futures.dequeue();
+        int value = f.get();
 
-    std::lock_guard<std::mutex> guard(cout_mtx);
-    std::cout << "Returned: " << value << std::endl;
-  }
+        std::lock_guard<std::mutex> guard(cout_mtx);
+        std::cout << "Returned: " << value << std::endl;
+      }
+  });
 
-  t1.join();
+  producer.join();
+  consumer.join();
 
   return 0;
 }
-
-// --- Example for trace ----------------
-
-// BlockingQueue created with max size: 4
-
-// Queue is empty. Consumer is waiting...
-
-// Enqueuing element - Current size: 0
-// Worker 1 is working...
-// Dequeuing element - Current size: 1
-// Worker 2 is working...
-// Enqueuing element - Current size: 0
-// Enqueuing element - Current size: 1
-// Worker 3 is working...
-// Enqueuing element - Current size: 2
-// Worker 4 is working...
-// Worker 5 is working...
-// Enqueuing element - Current size: 3
-
-// Queue is full. Producer is waiting...
-
-// Worker 6 is working...
-// Returned: 1
-// Dequeuing element - Current size: 4
-// Enqueuing element - Current size: 3
-
-// Queue is full. Producer is waiting...
-
-// Worker 7 is working...
-// Returned: 2
-// Dequeuing element - Current size: 4
-// Returned: 3
-// Dequeuing element - Current size: 3
-// Enqueuing element - Current size: 2
-// Enqueuing element - Current size: 3
-
-// Queue is full. Producer is waiting...
-
-// Worker 8 is working...
-// Worker 9 is working...
-// Returned: 4
-// Dequeuing element - Current size: 4
-// Returned: 5
-// Dequeuing element - Current size: 3
-// Returned: 6
-// Enqueuing element - Current size: 2
-// Dequeuing element - Current size: 3
-// Enqueuing element - Current size: 2
-// Worker 10 is working...
-// Returned: 7
-// Dequeuing element - Current size: 3
-// Returned: 8
-// Dequeuing element - Current size: 2
-// Returned: 9
-// Dequeuing element - Current size: 1
-// Returned: 10
