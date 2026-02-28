@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const int NUM_CORES = thread::hardware_concurrency() / 2;
+const int NUM_CORES = thread::hardware_concurrency();
 
 double calculate_pi(long long terms_start, long long terms_end) {
   double sum = 0.0;
@@ -42,9 +42,9 @@ int main() {
   future<double> futures[NUM_CORES];
 
   for (long long i = 0; i < NUM_CORES; i++) {
-    int threads_per_core = 1E10 / NUM_CORES;
-    long long terms_start = i * threads_per_core;
-    long long terms_end = (i + 1) * threads_per_core;
+    long long terms_per_core = 1E10 / NUM_CORES;
+    long long terms_start = i * terms_per_core;
+    long long terms_end = (i + 1) * terms_per_core;
     threads[i] = thread(do_calculation, terms_start, terms_end, std::ref(promises[i]));
   }
 
