@@ -22,9 +22,9 @@ double calculate_pi(long long terms_start, long long terms_end) {
 };
 
 int main() {
-  const time_t start_time = time(nullptr);
+  auto start = std::chrono::steady_clock::now();
   cout << "Calculating pi using the Leibniz formula..." << endl;
-  cout << "Start time: " << ctime(&start_time) << endl;
+
   mutex mtx;
 
   auto do_calculation = [&](long long terms_start, long long terms_end, promise<double> &promise){
@@ -59,9 +59,8 @@ int main() {
     threads[i].join();
   }
 
-  const time_t end_time = time(nullptr);
-  cout << "End time: " << ctime(&end_time) << endl;
-  cout << "Total time taken: " << difftime(end_time, start_time) << " seconds" << endl;
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "Total time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0  << " seconds" << std::endl;
 
   cout << setprecision(15) << "Calculated pi: " << pi << endl;
 

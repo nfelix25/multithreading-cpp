@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <thread>
 #include <future>
@@ -70,10 +71,9 @@ int main() {
 
   double pi = 0.0;
   long long terms = 1E10;
-  const time_t start_time = time(nullptr);
+  auto start = std::chrono::steady_clock::now();
 
   std::cout << "Calculating " << terms << " digits of pi using " << NUM_CORES << " threads..." << std::endl;
-  std::cout << "Start time: " << ctime(&start_time) << std::endl;
 
   std::thread producer([&](){
     for (int i = 0; i < NUM_CORES; i++) {
@@ -91,9 +91,9 @@ int main() {
   producer.join();
   consumer.join();
 
-  const time_t end_time = time(nullptr);
-  std::cout << "End time: " << ctime(&end_time) << std::endl;
-  std::cout << "Total time taken: " << difftime(end_time, start_time) << " seconds" << std::endl;
+  auto end = std::chrono::steady_clock::now();
+  std::cout << "Total time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0  << " seconds" << std::endl;
 
-  std::cout << std::fixed << std::setprecision(15) << "Calculated value of pi: " << pi << std::endl;
+  std::cout << "True pi: " << std::setprecision(15) << M_PI << std::endl;
+  std::cout << std::fixed << std::setprecision(15) << "Calc pi: " << pi << std::endl;
 }
