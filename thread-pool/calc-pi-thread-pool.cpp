@@ -7,6 +7,7 @@
 #include <queue>
 
 const int NUM_CORES = std::thread::hardware_concurrency();
+const long long terms = 1E9;
 
 // Completely pointtless overhead as NUM_BORES is the limiter, but added for practice
 template<typename E>
@@ -70,7 +71,6 @@ int main() {
   BlockingQueue<std::future<double>> results;
 
   double pi = 0.0;
-  long long terms = 1E10;
   auto start = std::chrono::steady_clock::now();
 
   std::cout << "Calculating " << terms << " digits of pi using " << NUM_CORES << " threads..." << std::endl;
@@ -97,3 +97,40 @@ int main() {
   std::cout << "True pi: " << std::setprecision(15) << M_PI << std::endl;
   std::cout << std::fixed << std::setprecision(15) << "Calc pi: " << pi << std::endl;
 }
+
+// Hyperthreading with 8 real cores
+
+// Calculating 1000000000 digits of pi using 16 threads...
+// Total time taken: 0.462 seconds
+
+// 2x cores
+// ~1.37x speed
+
+// Calculating 1000000000 digits of pi using 8 threads...
+// Total time taken: 0.63 seconds
+
+// 2x cores
+// ~1.85x speed
+
+// Calculating 1000000000 digits of pi using 4 threads...
+// Total time taken: 1.159 seconds
+
+// 2x cores
+// ~2.04x speed
+
+// Calculating 1000000000 digits of pi using 2 threads...
+// Total time taken: 2.371 seconds
+
+// 2x cores
+// ~1.88x speed
+
+// Calculating 1000000000 digits of pi using 1 threads...
+// Total time taken: 4.449 seconds
+
+/* Hyperthreading logical cores each have their own own registers and state,
+ * but the two logical threads on a single core share the L1 cache, L2 cache, and execution units (ALUs/FPUs).
+ * That is why we see a roughly linear performance increase from 1 -> 2 -> 4 -> 8 cores, but much less increase from 8 -> 16.
+ *
+ * Hyper-threading is most effective when one thread is waiting for data,
+ * allowing the other thread to use the idle execution resources, which is not the case in this compute-bound example.
+ */
